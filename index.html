@@ -1,112 +1,303 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kelix 3D Glass Text</title>
-  <style>
-    body { margin: 0; overflow: hidden; }
-    canvas { display: block; }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>3D Rotating Bubble Text</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(ellipse at center, #111 0%, #000 100%);
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            z-index: 100;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
 </head>
 <body>
-  <!-- Three.js and dependencies -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://threejs.org/examples/js/loaders/FontLoader.js"></script>
-  <script src="https://threejs.org/examples/js/geometries/TextGeometry.js"></script>
-  <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<div id="controls">
+    <div>3D Bubble Text Animation</div>
+    <button onclick="toggleRotation()">Toggle Rotation</button>
+    <button onclick="changeColor()">Change Color</button>
+</div>
+<div id="container"></div>
 
-  <script>
-    // Set up scene, camera, and renderer
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+    renderer.setClearColor(0x000000);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.getElementById('container').appendChild(renderer.domElement);
 
-    // Add orbit controls (optional, for testing; disable for video)
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enabled = false; // Disable for automatic rotation
-
-    // Camera position
-    camera.position.set(0, 0, 50);
-
-    // Add ambient light for soft illumination
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.6); // increased intensity
     scene.add(ambientLight);
 
-    // Add point light for glass reflections
-    const pointLight = new THREE.PointLight(0xffffff, 1, 100);
-    pointLight.position.set(20, 20, 20);
-    scene.add(pointLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    directionalLight.position.set(10, 10, 5);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
 
-    // Load font for 3D text
-    const loader = new THREE.FontLoader();
-    loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', function (font) {
-      // Create 3D text geometry
-      const textGeometry = new THREE.TextGeometry('Kelix', {
-        font: font,
-        size: 10,
-        height: 2, // Depth for true 3D effect
-        curveSegments: 12,
-        bevelEnabled: true,
-        bevelThickness: 0.2,
-        bevelSize: 0.1,
-        bevelSegments: 5
-      });
+    const pointLight1 = new THREE.PointLight(0x0080ff, 1.2, 100);
+    pointLight1.position.set(-20, 10, 10);
+    scene.add(pointLight1);
 
-      // Center the text
-      textGeometry.center();
+    const pointLight2 = new THREE.PointLight(0xff0080, 1.2, 100);
+    pointLight2.position.set(20, 10, 10);
+    scene.add(pointLight2);
 
-      // Create glass material
-      const glassMaterial = new THREE.MeshPhysicalMaterial({
-        color: 0x88ccff, // Light blue tint
+    const bubbleMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x2196F3,
         transparent: true,
-        opacity: 0.7,
-        metalness: 0.1,
-        roughness: 0.1,
-        transmission: 0.9, // High for glass effect
-        ior: 1.5, // Index of refraction for glass
-        reflectivity: 0.5,
-        thickness: 0.5
-      });
+        opacity: 0.95,
+        roughness: 0.05,
+        metalness: 0.2,
+        transmission: 0.95,
+        thickness: 0.6,
+        ior: 1.5,
+        reflectivity: 1.0,
+        iridescence: 1.0,
+        iridescenceIOR: 1.3,
+        iridescenceThicknessRange: [200, 1000]
+    });
 
-      // Create 3D text mesh
-      const textMesh = new THREE.Mesh(textGeometry, glassMaterial);
-      scene.add(textMesh);
+    let textMesh;
+    let isRotating = true;
+    const colors = [0x2196F3, 0xFF5722, 0x4CAF50, 0xFF9800, 0x9C27B0, 0xF44336];
+    let colorIndex = 0;
 
-      // Animation loop
-      function animate() {
+    function createTextMesh() {
+        const group = new THREE.Group();
+        const letters = [
+            { char: 'k', x: -8 },
+            { char: 'e', x: -4 },
+            { char: 'l', x: 0 },
+            { char: 'i', x: 4 },
+            { char: 'x', x: 8 }
+        ];
+
+        letters.forEach(letter => {
+            let shape;
+            switch(letter.char) {
+                case 'k': shape = createKShape(); break;
+                case 'e': shape = createEShape(); break;
+                case 'l': shape = createLShape(); break;
+                case 'i': shape = createIShape(); break;
+                case 'x': shape = createXShape(); break;
+            }
+
+            const extrudeSettings = {
+                depth: 1.5,
+                bevelEnabled: true,
+                bevelSegments: 16,
+                steps: 3,
+                bevelSize: 0.5,
+                bevelThickness: 0.4
+            };
+
+            const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            const mesh = new THREE.Mesh(geometry, bubbleMaterial);
+            mesh.position.x = letter.x;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            group.add(mesh);
+        });
+
+        return group;
+    }
+
+    function createKShape() {
+        const shape = new THREE.Shape();
+        shape.moveTo(0, 0);
+        shape.lineTo(0, 6);
+        shape.lineTo(1, 6);
+        shape.lineTo(1, 3.5);
+        shape.lineTo(2.5, 6);
+        shape.lineTo(4, 6);
+        shape.lineTo(2, 3);
+        shape.lineTo(4, 0);
+        shape.lineTo(2.5, 0);
+        shape.lineTo(1, 2.5);
+        shape.lineTo(1, 0);
+        shape.lineTo(0, 0);
+        return shape;
+    }
+
+    function createEShape() {
+        const shape = new THREE.Shape();
+        shape.moveTo(0, 0);
+        shape.lineTo(0, 6);
+        shape.lineTo(3.5, 6);
+        shape.lineTo(3.5, 5);
+        shape.lineTo(1, 5);
+        shape.lineTo(1, 3.5);
+        shape.lineTo(3, 3.5);
+        shape.lineTo(3, 2.5);
+        shape.lineTo(1, 2.5);
+        shape.lineTo(1, 1);
+        shape.lineTo(3.5, 1);
+        shape.lineTo(3.5, 0);
+        shape.lineTo(0, 0);
+        return shape;
+    }
+
+    function createLShape() {
+        const shape = new THREE.Shape();
+        shape.moveTo(0, 0);
+        shape.lineTo(0, 6);
+        shape.lineTo(1, 6);
+        shape.lineTo(1, 1);
+        shape.lineTo(3.5, 1);
+        shape.lineTo(3.5, 0);
+        shape.lineTo(0, 0);
+        return shape;
+    }
+
+    function createIShape() {
+        const shape = new THREE.Shape();
+        shape.moveTo(0, 0);
+        shape.lineTo(0, 1);
+        shape.lineTo(1, 1);
+        shape.lineTo(1, 5);
+        shape.lineTo(0, 5);
+        shape.lineTo(0, 6);
+        shape.lineTo(3, 6);
+        shape.lineTo(3, 5);
+        shape.lineTo(2, 5);
+        shape.lineTo(2, 1);
+        shape.lineTo(3, 1);
+        shape.lineTo(3, 0);
+        shape.lineTo(0, 0);
+        return shape;
+    }
+
+    function createXShape() {
+        const shape = new THREE.Shape();
+        shape.moveTo(0, 0);
+        shape.lineTo(1.2, 0);
+        shape.lineTo(2, 2);
+        shape.lineTo(2.8, 0);
+        shape.lineTo(4, 0);
+        shape.lineTo(2.7, 3);
+        shape.lineTo(4, 6);
+        shape.lineTo(2.8, 6);
+        shape.lineTo(2, 4);
+        shape.lineTo(1.2, 6);
+        shape.lineTo(0, 6);
+        shape.lineTo(1.3, 3);
+        shape.lineTo(0, 0);
+        return shape;
+    }
+
+    textMesh = createTextMesh();
+    scene.add(textMesh);
+
+    const particlesGeometry = new THREE.BufferGeometry();
+    const particlesCount = 100;
+    const posArray = new Float32Array(particlesCount * 3);
+    for(let i = 0; i < particlesCount * 3; i++) {
+        posArray[i] = (Math.random() - 0.5) * 50;
+    }
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+    const particlesMaterial = new THREE.PointsMaterial({
+        size: 0.1,
+        color: 0x4FC3F7,
+        transparent: true,
+        opacity: 0.6
+    });
+    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+    scene.add(particlesMesh);
+
+    camera.position.z = 15;
+    camera.position.y = 2;
+
+    let time = 0;
+    function animate() {
         requestAnimationFrame(animate);
+        time += 0.01;
 
-        // Rotate text in 3D space
-        textMesh.rotation.x += 0.01; // Rotate around X-axis
-        textMesh.rotation.y += 0.015; // Rotate around Y-axis
-        // textMesh.rotation.z += 0.005; // Optional Z-axis rotation
+        if (textMesh && isRotating) {
+            textMesh.rotation.x = Math.sin(time * 0.5) * 0.2;
+            textMesh.rotation.y = time * 0.8;
+            textMesh.rotation.z = Math.cos(time * 0.3) * 0.1;
+            textMesh.position.y = Math.sin(time * 1.2) * 0.5 - 0.5;
+        }
+
+        particlesMesh.rotation.y = time * 0.1;
+        particlesMesh.rotation.x = time * 0.05;
+
+        pointLight1.position.x = Math.sin(time) * 20;
+        pointLight1.position.z = Math.cos(time) * 20;
+        pointLight2.position.x = Math.cos(time * 1.5) * 20;
+        pointLight2.position.z = Math.sin(time * 1.5) * 20;
 
         renderer.render(scene, camera);
-      }
-      animate();
-    });
-
-    // Handle window resize
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    // Optional: Add minimalistic starry background
-    const starGeometry = new THREE.BufferGeometry();
-    const starCount = 200;
-    const positions = new Float32Array(starCount * 3);
-    for (let i = 0; i < starCount * 3; i++) {
-      positions[i] = (Math.random() - 0.5) * 200; // Random positions
     }
-    starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.5 });
-    const stars = new THREE.Points(starGeometry, starMaterial);
-    scene.add(stars);
-  </script>
+
+    function toggleRotation() {
+        isRotating = !isRotating;
+    }
+
+    function changeColor() {
+        if (textMesh) {
+            colorIndex = (colorIndex + 1) % colors.length;
+            textMesh.children.forEach(child => {
+                child.material.color.setHex(colors[colorIndex]);
+            });
+        }
+    }
+
+    window.addEventListener('resize', function() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    animate();
+
+    let mouseX = 0;
+    let mouseY = 0;
+
+    document.addEventListener('mousemove', function(event) {
+        mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+        mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+        if (textMesh) {
+            textMesh.rotation.x += mouseY * 0.001;
+            textMesh.rotation.y += mouseX * 0.001;
+        }
+    });
+</script>
 </body>
 </html>
