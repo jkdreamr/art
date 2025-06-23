@@ -78,14 +78,13 @@
       opacity: 1.0
     });
 
-    // Outline Material
     const outlineMaterial = new THREE.MeshToonMaterial({
       color: 0xffffff,
       opacity: 0.15,
       transparent: true
     });
 
-    // Normal map for animated distortion
+    // Normal map for distortion
     const size = 256, data = new Uint8Array(3 * size * size);
     for (let i = 0; i < size * size; i++) {
       const v = 128 + Math.floor(64 * (Math.random() * 2 - 1));
@@ -103,7 +102,7 @@
       'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json',
       font => {
         const text = "kelix".split("");
-        const spacing = 10;
+        const spacing = 6.5;
         let group = new THREE.Group();
 
         text.forEach((char, i) => {
@@ -112,12 +111,11 @@
             size: 8,
             height: 3,
             bevelEnabled: true,
-            bevelThickness: 1.2,
-            bevelSize: 1.2,
+            bevelThickness: 1,
+            bevelSize: 0.9,
             bevelSegments: 8,
             curveSegments: 16
           });
-          geom.center();
 
           const mesh = new THREE.Mesh(geom, bubbleMaterial.clone());
           const outline = new THREE.Mesh(geom, outlineMaterial.clone());
@@ -168,7 +166,7 @@
         if (isRotating) {
           mesh.rotation.y = time * 0.5;
         }
-        mesh.position.y = Math.sin(time * 2 + i) * 0.5;
+        mesh.position.y = Math.sin(time * 2 + i * 0.5) * 0.4;
       });
 
       renderer.render(scene, camera);
