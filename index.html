@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>kelix - 3D Bubble Text</title>
+  <title>kelix 3D Bubble Text</title>
   <style>
     body {
       margin: 0;
@@ -42,7 +42,7 @@
   </div>
   <div id="container"></div>
 
-  <!-- Three.js + Font -->
+  <!-- Three.js & Text Support -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/loaders/FontLoader.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/geometries/TextGeometry.js"></script>
@@ -56,35 +56,34 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.getElementById("container").appendChild(renderer.domElement);
 
-    // Lighting
-    const ambient = new THREE.AmbientLight(0xffffff, 0.7);
-    scene.add(ambient);
-
-    const light = new THREE.PointLight(0xffffff, 1.5);
-    light.position.set(20, 20, 20);
-    scene.add(light);
+    // Lights
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const pointLight = new THREE.PointLight(0xffffff, 1.2);
+    pointLight.position.set(20, 20, 20);
+    scene.add(pointLight);
 
     // Bubble Material
     const colors = [0x88ccff, 0xff88cc, 0x88ff88];
     let colorIndex = 0;
-    const material = new THREE.MeshPhysicalMaterial({
+    const bubbleMaterial = new THREE.MeshPhysicalMaterial({
       color: colors[colorIndex],
-      roughness: 0,
-      metalness: 0,
-      transmission: 1,
-      thickness: 1.5,
-      ior: 1.45,
+      roughness: 0.1,
+      metalness: 0.0,
+      transmission: 1.0,
+      thickness: 2.0,
+      ior: 1.4,
       reflectivity: 1,
       clearcoat: 1,
-      clearcoatRoughness: 0.05
+      clearcoatRoughness: 0.05,
+      transparent: true
     });
 
     let textMesh;
     let isRotating = true;
 
-    // Load Font and Create Text
+    // Load font and create text
     const loader = new THREE.FontLoader();
-    loader.load('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/fonts/helvetiker_regular.typeface.json', function(font) {
+    loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
       const geometry = new THREE.TextGeometry('kelix', {
         font: font,
         size: 6,
@@ -93,10 +92,11 @@
         bevelEnabled: true,
         bevelThickness: 1,
         bevelSize: 1.2,
-        bevelSegments: 16
+        bevelSegments: 10
       });
-      geometry.center();
-      textMesh = new THREE.Mesh(geometry, material);
+
+      geometry.center(); // Center the geometry
+      textMesh = new THREE.Mesh(geometry, bubbleMaterial);
       scene.add(textMesh);
     });
 
@@ -142,6 +142,7 @@
       }
     }
 
+    // Resize handling
     window.addEventListener("resize", () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
