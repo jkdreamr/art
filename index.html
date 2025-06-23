@@ -1,41 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Bubble Glass Text – kelix</title>
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: radial-gradient(circle at center, #111, #000);
-      font-family: sans-serif;
-    }
-    #container {
-      width: 100vw;
-      height: 100vh;
-    }
-    #controls {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      padding: 10px;
-      background: rgba(0,0,0,0.5);
-      color: white;
-      border-radius: 8px;
-      z-index: 1;
-    }
-    button {
-      background: #007bff;
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      margin: 4px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover { background: #0056b3; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Bubble Glass Text – kelix</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: radial-gradient(circle at center, #111, #000);
+  }
+  #container { width: 100vw; height: 100vh; }
+  #controls {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    z-index: 1;
+  }
+  button {
+    background: #007bff;
+    border: none;
+    padding: 6px 12px;
+    margin: 4px;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  button:hover { background: #0056b3; }
+</style>
 </head>
 <body>
   <div id="controls">
@@ -45,144 +41,122 @@
   </div>
   <div id="container"></div>
 
-  <!-- Three.js, TextGeometry, FontLoader -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://threejs.org/examples/jsm/loaders/FontLoader.js"></script>
-  <script src="https://threejs.org/examples/jsm/geometries/TextGeometry.js"></script>
-
-  <!-- Optional: EffectComposer and bloom -->
-  <script src="https://threejs.org/examples/jsm/postprocessing/EffectComposer.js"></script>
-  <script src="https://threejs.org/examples/jsm/postprocessing/RenderPass.js"></script>
-  <script src="https://threejs.org/examples/jsm/postprocessing/UnrealBloomPass.js"></script>
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/geometries/TextGeometry.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/loaders/FontLoader.js"></script>
+  
   <script>
-  let scene = new THREE.Scene();
-  let camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 1000);
-  let renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(innerWidth, innerHeight);
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  document.getElementById('container').appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('container').appendChild(renderer.domElement);
 
-  // Environment map for reflections
-  const cubeLoader = new THREE.CubeTextureLoader().setPath('path/to/cubemap/');
-  const envMap = cubeLoader.load(['px.jpg','nx.jpg','py.jpg','ny.jpg','pz.jpg','nz.jpg']);
-  scene.environment = envMap;
+    // Lights
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    dirLight.position.set(10, 15, 10);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+    const pt1 = new THREE.PointLight(0x88ccff, 1, 100);
+    const pt2 = new THREE.PointLight(0xff88cc, 1, 100);
+    scene.add(pt1, pt2);
 
-  // Lighting
-  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-  const dir = new THREE.DirectionalLight(0xffffff, 1.2);
-  dir.position.set(10, 15, 10);
-  dir.castShadow = true;
-  scene.add(dir);
-  const p1 = new THREE.PointLight(0x88ccff, 1, 100);
-  const p2 = new THREE.PointLight(0xff88cc, 1, 100);
-  scene.add(p1, p2);
-
-  // Glassy bubble material
-  const bubbleMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x88ccff,
-    roughness: 0,
-    metalness: 0,
-    transmission: 1,
-    thickness: 1.5,
-    ior: 1.45,
-    reflectivity: 1,
-    clearcoat: 1,
-    clearcoatRoughness: 0.05,
-    envMap: envMap
-  });
-
-  let textMesh, isRotating = true;
-  const colors = [0x88ccff, 0xff88cc, 0x88ff88];
-  let colorIndex = 0;
-
-  // Load font and setup text
-  new THREE.FontLoader().load('fonts/indieBubble.json', font => {
-    const geo = new THREE.TextGeometry('kelix', {
-      font: font,
-      size: 5,
-      height: 1.5,
-      curveSegments: 32,
-      bevelEnabled: true,
-      bevelThickness: 0.6,
-      bevelSize: 1.0,
-      bevelSegments: 32
+    // Glassy bubble material
+    const bubbleMat = new THREE.MeshPhysicalMaterial({
+      color: 0x88ccff,
+      roughness: 0,
+      metalness: 0,
+      transmission: 1,
+      thickness: 1.2,
+      ior: 1.45,
+      reflectivity: 1,
+      clearcoat: 1,
+      clearcoatRoughness: 0.05
     });
-    geo.center(); // center geometry
-    textMesh = new THREE.Mesh(geo, bubbleMaterial);
-    textMesh.castShadow = true;
-    textMesh.receiveShadow = true;
-    scene.add(textMesh);
-  });
 
-  // Floating particles
-  const particleGeo = new THREE.BufferGeometry();
-  const count = 200;
-  const positions = new Float32Array(count * 3);
-  for(let i = 0; i < count*3; i++) positions[i] = (Math.random()-0.5)*70;
-  particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  const pmat = new THREE.PointsMaterial({ size: 0.1, color: 0x88ccff, transparent: true, opacity: 0.6 });
-  const pmesh = new THREE.Points(particleGeo, pmat);
-  scene.add(pmesh);
+    let textMesh, isRotating = true;
+    const colors = [0x88ccff, 0xff88cc, 0x88ff88];
+    let colorIndex = 0;
 
-  camera.position.set(0, 2, 25);
+    // Load built‑in font
+    new THREE.FontLoader().load('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/fonts/helvetiker_regular.typeface.json', font => {
+      const geometry = new THREE.TextGeometry('kelix', {
+        font: font,
+        size: 5,
+        height: 1.5,
+        curveSegments: 32,
+        bevelEnabled: true,
+        bevelThickness: 0.6,
+        bevelSize: 1.0,
+        bevelSegments: 32
+      });
+      geometry.center();
+      
+      textMesh = new THREE.Mesh(geometry, bubbleMat);
+      textMesh.castShadow = true;
+      textMesh.receiveShadow = true;
+      scene.add(textMesh);
+    });
 
-  // Optional post-processing bloom
-  let composer, bloomPass;
-  composer = new THREE.EffectComposer(renderer);
-  composer.addPass(new THREE.RenderPass(scene, camera));
-  bloomPass = new THREE.UnrealBloomPass(null, 0.5, 0.4, 0.85);
-  composer.addPass(bloomPass);
+    // Particles
+    const pgeo = new THREE.BufferGeometry();
+    const cnt = 200;
+    const arr = new Float32Array(cnt * 3);
+    for (let i = 0; i < cnt * 3; i++) arr[i] = (Math.random() - 0.5) * 70;
+    pgeo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+    const pmat = new THREE.PointsMaterial({ size: 0.1, color: 0x88ccff, transparent: true, opacity: 0.6 });
+    const particles = new THREE.Points(pgeo, pmat);
+    scene.add(particles);
 
-  let time = 0;
-  function animate() {
-    requestAnimationFrame(animate);
-    time += 0.016;
+    camera.position.set(0, 2, 25);
 
-    if (textMesh && isRotating) {
-      textMesh.rotation.set(
-        Math.sin(time * 0.4) * 0.2,
-        time * 0.3,
-        Math.cos(time * 0.4) * 0.1
-      );
-      textMesh.position.y = Math.sin(time * 0.6) * 0.5;
+    let time = 0;
+    function animate() {
+      requestAnimationFrame(animate);
+      time += 0.016;
+
+      if (textMesh && isRotating) {
+        textMesh.rotation.set(
+          Math.sin(time * 0.4) * 0.2,
+          time * 0.3,
+          Math.cos(time * 0.4) * 0.1
+        );
+        textMesh.position.y = Math.sin(time * 0.6) * 0.5;
+      }
+      particles.rotation.y = time * 0.1;
+      particles.rotation.x = time * 0.05;
+      pt1.position.set(Math.sin(time) * 20, 10, Math.cos(time) * 20);
+      pt2.position.set(Math.cos(time * 1.3) * 20, 10, Math.sin(time * 1.3) * 20);
+
+      renderer.render(scene, camera);
     }
 
-    pmesh.rotation.y = time * 0.1;
-    pmesh.rotation.x = time * 0.05;
-
-    p1.position.set(Math.sin(time) * 20, 10, Math.cos(time) * 20);
-    p2.position.set(Math.cos(time * 1.3) * 20, 10, Math.sin(time * 1.3) * 20);
-
-    composer.render();
-  }
-
-  function toggleRotation() { isRotating = !isRotating; }
-  function changeColor() {
-    if (textMesh) {
-      colorIndex = (colorIndex + 1) % colors.length;
-      textMesh.material.color.setHex(colors[colorIndex]);
+    function toggleRotation() { isRotating = !isRotating; }
+    function changeColor() {
+      if (textMesh) {
+        colorIndex = (colorIndex + 1) % colors.length;
+        textMesh.material.color.setHex(colors[colorIndex]);
+      }
     }
-  }
 
-  window.addEventListener('resize', () => {
-    camera.aspect = innerWidth/innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight);
-    composer.setSize(innerWidth, innerHeight);
-  });
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
 
-  window.addEventListener('mousemove', e => {
-    const mx = (e.clientX / innerWidth) * 2 - 1;
-    const my = -(e.clientY / innerHeight) * 2 + 1;
-    if (textMesh) {
-      textMesh.rotation.x += my * 0.002;
-      textMesh.rotation.y += mx * 0.002;
-    }
-  });
+    window.addEventListener('mousemove', e => {
+      const mx = (e.clientX/window.innerWidth)*2 - 1;
+      const my = -(e.clientY/window.innerHeight)*2 + 1;
+      if (textMesh) {
+        textMesh.rotation.x += my * 0.002;
+        textMesh.rotation.y += mx * 0.002;
+      }
+    });
 
-  animate();
+    animate();
   </script>
 </body>
 </html>
