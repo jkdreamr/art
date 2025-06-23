@@ -1,45 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rotating Kelix</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kelix 3D Glass Text</title>
   <style>
-    body {
-      margin: 0;
-      background: black;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-
-    .rotate-container {
-      width: 400px;
-      height: 400px;
-      perspective: 1000px;
-    }
-
-    .rotate-image {
-      width: 100%;
-      height: auto;
-      transform-style: preserve-3d;
-      animation: spin 8s linear infinite;
-    }
-
-    @keyframes spin {
-      from {
-        transform: rotateY(0deg);
-      }
-      to {
-        transform: rotateY(360deg);
-      }
-    }
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
   </style>
 </head>
 <body>
-  <div class="rotate-container">
-    <img src="kelix.png" alt="kelix" class="rotate-image" />
-  </div>
+  <!-- Three.js and dependencies -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://threejs.org/examples/js/loaders/FontLoader.js"></script>
+  <script src="https://threejs.org/examples/js/geometries/TextGeometry.js"></script>
+  <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    // Set up scene, camera, and renderer
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Add orbit controls (optional, for testing; disable for video)
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enabled = false; // Disable for automatic rotation
+
+    // Camera position
+    camera.position.set(0, 0, 50);
+
+    // Add ambient light for soft illumination
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    // Add point light for glass reflections
+    const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+    pointLight.position.set(20, 20, 20);
+    scene.add(pointLight);
+
+    // Load font for 3D text
+    const loader = new THREE.FontLoader();
+    loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', function (font) {
+      // Create 3D text geometry
+      const textGeometry = new THREE.TextGeometry('Kelix', {
+        font: font,
+        size: 10,
+        height: 2, // Depth for true 3D effect
+        curveSegments: 12,
+        bevelEnabled: true,
+        bevelThickness: 0.2,
+        bevelSize: 0.1,
+        bevelSegments: 5
+      });
+
+      // Center the text
+      textGeometry.center();
+
+      // Create glass material
+      const glassMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x88ccff, // Light blue tint
+        transparent: true,
+        opacity: 0.7,
+        metalness: 0.1,
+        roughness: 0.1,
+        transmission: 0.9, // High for glass effect
+        ior: 1.5, // Index of refraction for glass
+        reflectivity: 0.5,
+        thickness: 0.5
+      });
+
+      // Create 3D text mesh
+      const textMesh = new THREE.Mesh(textGeometry, glassMaterial);
+      scene.add(textMesh);
+
+      // Animation loop
+      function animate() {
+        requestAnimationFrame(animate);
+
+        // Rotate text in 3D space
+        textMesh.rotation.x += 0.01; // Rotate around X-axis
+        textMesh.rotation.y += 0.015; // Rotate around Y-axis
+        // textMesh.rotation.z += 0.005; // Optional Z-axis rotation
+
+        renderer.render(scene, camera);
+      }
+      animate();
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Optional: Add minimalistic starry background
+    const starGeometry = new THREE.BufferGeometry();
+    const starCount = 200;
+    const positions = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount * 3; i++) {
+      positions[i] = (Math.random() - 0.5) * 200; // Random positions
+    }
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.5 });
+    const stars = new THREE.Points(starGeometry, starMaterial);
+    scene.add(stars);
+  </script>
 </body>
 </html>
