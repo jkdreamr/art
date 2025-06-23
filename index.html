@@ -5,11 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>kelix 3D Bubble Text</title>
 <style>
-  body {
-    margin: 0;
-    overflow: hidden;
-    background: #FFDAB3; /* baby orange */
-  }
+  body { margin: 0; overflow: hidden; background: #FFE5B4; }
   #controls {
     position: absolute; top: 20px; left: 20px;
     background: rgba(0,0,0,0.6); color: white;
@@ -38,7 +34,7 @@
 
 <script>
 let scene = new THREE.Scene();
-scene.background = new THREE.Color(0xFFDAB3); // baby orange
+scene.background = new THREE.Color(0xFFE5B4);
 
 let camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 1, 1000);
 camera.position.set(0,0,60);
@@ -114,6 +110,7 @@ new THREE.FontLoader().load(
     textMesh.parent.add(textMesh);
     textMesh.parent.add(outlineMesh);
 
+    // One halo covering entire text
     let halo = new THREE.Sprite(spriteMat);
     halo.scale.set(extent.x*1.4, extent.y*1.4, 1);
     halo.position.copy(center);
