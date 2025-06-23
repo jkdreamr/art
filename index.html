@@ -8,29 +8,30 @@
     body {
       margin: 0;
       overflow: hidden;
-      background: radial-gradient(circle, #111 0%, #000 100%);
+      background: radial-gradient(circle at center, #1a1a1a 0%, #444 100%);
     }
     #controls {
       position: absolute;
       top: 20px;
       left: 20px;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(255, 255, 255, 0.1);
       color: white;
       padding: 10px;
       border-radius: 10px;
       z-index: 1;
+      font-family: sans-serif;
     }
     button {
       margin: 4px;
       padding: 8px 14px;
       border: none;
       border-radius: 5px;
-      background: #007bff;
+      background: #00aaff;
       color: white;
       cursor: pointer;
     }
     button:hover {
-      background: #0056b3;
+      background: #0077cc;
     }
   </style>
 </head>
@@ -42,7 +43,7 @@
   </div>
   <div id="container"></div>
 
-  <!-- Three.js & Text Support -->
+  <!-- Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/loaders/FontLoader.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/geometries/TextGeometry.js"></script>
@@ -56,32 +57,39 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.getElementById("container").appendChild(renderer.domElement);
 
-    // Lights
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    const pointLight = new THREE.PointLight(0xffffff, 1.2);
-    pointLight.position.set(20, 20, 20);
-    scene.add(pointLight);
+    // Light setup (brighter, more ambient)
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    
+    const pointLight1 = new THREE.PointLight(0x88ccff, 1.5, 100);
+    pointLight1.position.set(20, 30, 20);
+    scene.add(pointLight1);
+
+    const pointLight2 = new THREE.PointLight(0xff88cc, 1.5, 100);
+    pointLight2.position.set(-20, -30, 20);
+    scene.add(pointLight2);
 
     // Bubble Material
-    const colors = [0x88ccff, 0xff88cc, 0x88ff88];
+    const colors = [0x88ccff, 0xff88cc, 0x88ff88, 0xffff88];
     let colorIndex = 0;
     const bubbleMaterial = new THREE.MeshPhysicalMaterial({
       color: colors[colorIndex],
-      roughness: 0.1,
+      roughness: 0.05,
       metalness: 0.0,
       transmission: 1.0,
-      thickness: 2.0,
-      ior: 1.4,
+      thickness: 3.0,
+      ior: 1.5,
       reflectivity: 1,
       clearcoat: 1,
-      clearcoatRoughness: 0.05,
-      transparent: true
+      clearcoatRoughness: 0,
+      transparent: true,
+      emissive: new THREE.Color(0x111111),
+      emissiveIntensity: 0.3
     });
 
     let textMesh;
     let isRotating = true;
 
-    // Load font and create text
+    // Load and create "kelix" text
     const loader = new THREE.FontLoader();
     loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
       const geometry = new THREE.TextGeometry('kelix', {
@@ -90,17 +98,16 @@
         height: 2,
         curveSegments: 32,
         bevelEnabled: true,
-        bevelThickness: 1,
-        bevelSize: 1.2,
+        bevelThickness: 1.5,
+        bevelSize: 1.3,
         bevelSegments: 10
       });
-
-      geometry.center(); // Center the geometry
+      geometry.center();
       textMesh = new THREE.Mesh(geometry, bubbleMaterial);
       scene.add(textMesh);
     });
 
-    // Particles
+    // Floating particles
     const particles = new THREE.Points(
       new THREE.BufferGeometry().setAttribute(
         'position',
@@ -109,11 +116,16 @@
           3
         )
       ),
-      new THREE.PointsMaterial({ color: 0x88ccff, size: 0.3, transparent: true, opacity: 0.6 })
+      new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.5,
+        transparent: true,
+        opacity: 0.3
+      })
     );
     scene.add(particles);
 
-    // Animate
+    // Animation loop
     let time = 0;
     function animate() {
       requestAnimationFrame(animate);
@@ -142,7 +154,7 @@
       }
     }
 
-    // Resize handling
+    // Resize responsiveness
     window.addEventListener("resize", () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
