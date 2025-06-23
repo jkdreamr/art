@@ -8,18 +8,8 @@
   body {
     margin: 0;
     overflow: hidden;
-    height: 100%;
-    background: linear-gradient(135deg, #FFDAB3, #FFCCE5, #CDEDF6, #E2F0CB);
-    background-size: 400% 400%;
-    animation: gradientBG 20s ease infinite;
+    background: #FFDAB3; /* baby orange */
   }
-
-  @keyframes gradientBG {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-
   #controls {
     position: absolute; top: 20px; left: 20px;
     background: rgba(0,0,0,0.6); color: white;
@@ -48,11 +38,12 @@
 
 <script>
 let scene = new THREE.Scene();
+scene.background = new THREE.Color(0xFFDAB3); // baby orange
 
 let camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 1, 1000);
 camera.position.set(0,0,60);
 
-let renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+let renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(innerWidth, innerHeight);
 document.getElementById('container').appendChild(renderer.domElement);
 
@@ -91,8 +82,7 @@ bubbleBase.normalMap = normalMap;
 bubbleBase.normalScale.set(0.1,0.1);
 
 // Text Setup
-let textMesh, outlineMesh, textGroup = new THREE.Group();
-let halos=[], isRotating=true;
+let textMesh, outlineMesh, halos=[], isRotating=true;
 
 new THREE.FontLoader().load(
   'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json',
@@ -107,12 +97,11 @@ new THREE.FontLoader().load(
     textMesh = new THREE.Mesh(g, bubbleBase);
     outlineMesh = new THREE.Mesh(g, bubbleToon);
     outlineMesh.scale.multiplyScalar(1.05);
+    
+    scene.add(textMesh);
+    scene.add(outlineMesh);
 
-    textGroup.add(textMesh);
-    textGroup.add(outlineMesh);
-    scene.add(textGroup);
-
-    // Add halo sprite
+    // Add halo sprites
     let spriteMat = new THREE.SpriteMaterial({
       color:0xffffff, transparent:true,
       opacity:0.15, blending:THREE.AdditiveBlending
@@ -120,6 +109,10 @@ new THREE.FontLoader().load(
     let bb = new THREE.Box3().setFromObject(textMesh);
     let center = bb.getCenter(new THREE.Vector3());
     let extent = bb.getSize(new THREE.Vector3());
+    textMesh.parent = new THREE.Object3D();
+    scene.add(textMesh.parent);
+    textMesh.parent.add(textMesh);
+    textMesh.parent.add(outlineMesh);
 
     let halo = new THREE.Sprite(spriteMat);
     halo.scale.set(extent.x*1.4, extent.y*1.4, 1);
@@ -145,16 +138,15 @@ function animate(){
   requestAnimationFrame(animate);
   time+=0.01;
 
-  // Animate normalMap for subtle distortion
+  // animate normalMap for distortion
   bubbleBase.normalMap.offset.x = time*0.05;
   bubbleBase.normalMap.offset.y = time*0.03;
 
-  if (textGroup && isRotating) {
-    textGroup.rotation.y = Math.sin(time*0.2)*0.1;
-    textGroup.rotation.x = Math.sin(time*0.25)*0.05;
-    textGroup.position.y = Math.sin(time*0.5)*0.4;
+  if(textMesh && isRotating){
+    textMesh.rotation.y += 0.01;
+    textMesh.rotation.x = Math.sin(time*0.3)*0.1;
+    textMesh.parent.rotation.z = Math.sin(time*0.2)*0.05;
   }
-
   particles.rotation.y = time*0.1;
 
   renderer.render(scene, camera);
