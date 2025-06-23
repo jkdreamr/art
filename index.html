@@ -1,210 +1,181 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>kelix Bubble Gradient</title>
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: linear-gradient(135deg, #FFDAB3, #FFCCE5, #D0F0C0);
-      background-size: 400% 400%;
-      animation: gradientBG 15s ease infinite;
-    }
-    @keyframes gradientBG {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-    #controls {
-      position: absolute; top: 20px; left: 20px;
-      background: rgba(0,0,0,0.6); color: white;
-      padding: 10px; border-radius: 10px; z-index:1;
-      font-family: sans-serif;
-    }
-    button {
-      margin: 4px; padding: 8px 14px;
-      border:none; border-radius:5px;
-      background: #0077ff; color: white; cursor: pointer;
-    }
-    button:hover { background: #0055cc; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>kelix 3D Bubble Text</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    height: 100%;
+    background: linear-gradient(135deg, #FFDAB3, #FFCCE5, #CDEDF6, #E2F0CB);
+    background-size: 400% 400%;
+    animation: gradientBG 20s ease infinite;
+  }
+
+  @keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  #controls {
+    position: absolute; top: 20px; left: 20px;
+    background: rgba(0,0,0,0.6); color: white;
+    padding: 10px; border-radius: 10px; z-index:1;
+    font-family: sans-serif;
+  }
+  button {
+    margin: 4px; padding: 8px 14px;
+    border:none; border-radius:5px;
+    background: #0077ff; color: white; cursor: pointer;
+  }
+  button:hover { background: #0055cc; }
+</style>
 </head>
 <body>
-  <div id="controls">
-    <strong>kelix 3D Bubble</strong><br/>
-    <button onclick="toggleRotation()">Toggle Rotation</button>
-    <button onclick="changeColor()">Change Color</button>
-  </div>
-  <div id="container"></div>
+<div id="controls">
+  <strong>kelix 3D Bubble</strong><br/>
+  <button onclick="toggleRotation()">Toggle Rotation</button>
+  <button onclick="changeColor()">Change Color</button>
+</div>
+<div id="container"></div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/loaders/FontLoader.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/geometries/TextGeometry.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/loaders/FontLoader.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/geometries/TextGeometry.js"></script>
 
-  <script>
-    let scene = new THREE.Scene();
-    let camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 1, 1000);
-    camera.position.set(0,0,60);
+<script>
+let scene = new THREE.Scene();
 
-    let renderer = new THREE.WebGLRenderer({ antialias:true, alpha: true });
-    renderer.setSize(innerWidth, innerHeight);
-    renderer.setClearAlpha(0);
-    document.getElementById('container').appendChild(renderer.domElement);
+let camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 1, 1000);
+camera.position.set(0,0,60);
 
-    // Lighting
-    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(30, 50, 30);
-    scene.add(dirLight);
+let renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+renderer.setSize(innerWidth, innerHeight);
+document.getElementById('container').appendChild(renderer.domElement);
 
-    const pointLight1 = new THREE.PointLight(0xffaacc, 1, 100);
-    pointLight1.position.set(20, 30, 20);
-    scene.add(pointLight1);
+// Lights
+scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+let d1 = new THREE.DirectionalLight(0xffffff, 1.2);
+d1.position.set(20,20,20);
+scene.add(d1);
+let p1 = new THREE.PointLight(0xff88cc, 1.2);
+p1.position.set(-20,-20,30);
+scene.add(p1);
 
-    // Bubble material
-    const colors = [0x88ccff, 0xff88cc, 0x88ff88, 0xffffaa];
-    let colorIndex = 0;
+// Materials
+const colors = [0x88ccff, 0xff88cc, 0x88ff88, 0xffff88];
+let colorIndex = 0;
 
-    const bubbleMaterial = new THREE.MeshPhysicalMaterial({
-      color: colors[colorIndex],
-      roughness: 0.1,
-      metalness: 0.2,
-      transmission: 1,
-      thickness: 2,
-      ior: 1.3,
-      reflectivity: 0.5,
-      clearcoat: 1,
-      clearcoatRoughness: 0.1,
-      transparent: true,
-      opacity: 1.0
+let bubbleBase = new THREE.MeshPhysicalMaterial({
+  color: colors[colorIndex], roughness:0.05, metalness:0.2,
+  transmission:0.9, thickness:2.0, ior:1.3, reflectivity:0.6,
+  clearcoat:1, clearcoatRoughness:0.1, transparent:true, opacity:1.0
+});
+
+let bubbleToon = new THREE.MeshToonMaterial({
+  color:0xcccccc, gradientMap:null, opacity:0.3, transparent:true
+});
+
+// Generate a simple noise normal map
+let size=256, data=new Uint8Array(3*size*size);
+for(let i=0;i<size*size;i++){
+  let v=128+Math.floor(64 * (Math.random()*2-1));
+  data[3*i]=data[3*i+1]=data[3*i+2]=v;
+}
+let normalMap = new THREE.DataTexture(data, size,size,THREE.RGBFormat);
+normalMap.needsUpdate=true;
+bubbleBase.normalMap = normalMap;
+bubbleBase.normalScale.set(0.1,0.1);
+
+// Text Setup
+let textMesh, outlineMesh, textGroup = new THREE.Group();
+let halos=[], isRotating=true;
+
+new THREE.FontLoader().load(
+  'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json',
+  font => {
+    let g = new THREE.TextGeometry('kelix', {
+      font:font, size:8, height:3,
+      curveSegments:20, bevelEnabled:true,
+      bevelThickness:1.2, bevelSize:1, bevelSegments:5
     });
+    g.center();
 
-    const outlineMaterial = new THREE.MeshToonMaterial({
-      color: 0xffffff,
-      opacity: 0.2,
-      transparent: true
+    textMesh = new THREE.Mesh(g, bubbleBase);
+    outlineMesh = new THREE.Mesh(g, bubbleToon);
+    outlineMesh.scale.multiplyScalar(1.05);
+
+    textGroup.add(textMesh);
+    textGroup.add(outlineMesh);
+    scene.add(textGroup);
+
+    // Add halo sprite
+    let spriteMat = new THREE.SpriteMaterial({
+      color:0xffffff, transparent:true,
+      opacity:0.15, blending:THREE.AdditiveBlending
     });
+    let bb = new THREE.Box3().setFromObject(textMesh);
+    let center = bb.getCenter(new THREE.Vector3());
+    let extent = bb.getSize(new THREE.Vector3());
 
-    // Generate noise normal map
-    const size = 256, data = new Uint8Array(3 * size * size);
-    for (let i = 0; i < size * size; i++) {
-      const v = 128 + Math.floor(64 * (Math.random() * 2 - 1));
-      data[3 * i] = data[3 * i + 1] = data[3 * i + 2] = v;
-    }
-    const normalMap = new THREE.DataTexture(data, size, size, THREE.RGBFormat);
-    normalMap.needsUpdate = true;
-    bubbleMaterial.normalMap = normalMap;
-    bubbleMaterial.normalScale.set(0.15, 0.15);
+    let halo = new THREE.Sprite(spriteMat);
+    halo.scale.set(extent.x*1.4, extent.y*1.4, 1);
+    halo.position.copy(center);
+    scene.add(halo);
+    halos.push(halo);
+  }
+);
 
-    // Create text
-    let textMesh, outlineMesh, halos = [], isRotating = true;
+// Particles
+let particles = new THREE.Points(
+  new THREE.BufferGeometry().setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(new Array(300).fill(0).map(()=> (Math.random()-0.5)*100),3)
+  ),
+  new THREE.PointsMaterial({ color:0x999999, size:0.4, transparent:true, opacity:0.3 })
+);
+scene.add(particles);
 
-    new THREE.FontLoader().load(
-      'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json',
-      font => {
-        const geometry = new THREE.TextGeometry('kelix', {
-          font: font,
-          size: 8,
-          height: 3,
-          curveSegments: 20,
-          bevelEnabled: true,
-          bevelThickness: 1.5,
-          bevelSize: 1.5,
-          bevelSegments: 8
-        });
-        geometry.center();
+// Animation
+let time=0;
+function animate(){
+  requestAnimationFrame(animate);
+  time+=0.01;
 
-        textMesh = new THREE.Mesh(geometry, bubbleMaterial);
-        outlineMesh = new THREE.Mesh(geometry, outlineMaterial);
-        outlineMesh.scale.multiplyScalar(1.05);
+  // Animate normalMap for subtle distortion
+  bubbleBase.normalMap.offset.x = time*0.05;
+  bubbleBase.normalMap.offset.y = time*0.03;
 
-        let group = new THREE.Group();
-        group.add(textMesh);
-        group.add(outlineMesh);
-        scene.add(group);
+  if (textGroup && isRotating) {
+    textGroup.rotation.y = Math.sin(time*0.2)*0.1;
+    textGroup.rotation.x = Math.sin(time*0.25)*0.05;
+    textGroup.position.y = Math.sin(time*0.5)*0.4;
+  }
 
-        // Halo sprite
-        const spriteMat = new THREE.SpriteMaterial({
-          color: 0xffffff,
-          transparent: true,
-          opacity: 0.15,
-          blending: THREE.AdditiveBlending
-        });
-        const bb = new THREE.Box3().setFromObject(group);
-        const size = bb.getSize(new THREE.Vector3());
-        const center = bb.getCenter(new THREE.Vector3());
+  particles.rotation.y = time*0.1;
 
-        const halo = new THREE.Sprite(spriteMat);
-        halo.scale.set(size.x * 1.5, size.y * 1.5, 1);
-        halo.position.copy(center);
-        scene.add(halo);
-        halos.push(halo);
+  renderer.render(scene, camera);
+}
+animate();
 
-        group.position.y = 2;
-        textMesh.userData.group = group;
-      }
-    );
+// Controls
+function toggleRotation(){ isRotating = !isRotating; }
+function changeColor(){
+  if(textMesh){
+    colorIndex=(colorIndex+1)%colors.length;
+    bubbleBase.color.setHex(colors[colorIndex]);
+  }
+}
 
-    // Particles
-    const particleGeometry = new THREE.BufferGeometry();
-    const particleCount = 300;
-    const positions = new Float32Array(particleCount * 3);
-    for (let i = 0; i < particleCount * 3; i++) {
-      positions[i] = (Math.random() - 0.5) * 100;
-    }
-    particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const particleMaterial = new THREE.PointsMaterial({
-      color: 0xffffff,
-      size: 0.4,
-      opacity: 0.2,
-      transparent: true
-    });
-    const particles = new THREE.Points(particleGeometry, particleMaterial);
-    scene.add(particles);
-
-    // Animate
-    let time = 0;
-    function animate() {
-      requestAnimationFrame(animate);
-      time += 0.01;
-
-      // Animate distortion
-      if (bubbleMaterial.normalMap) {
-        bubbleMaterial.normalMap.offset.x = time * 0.03;
-        bubbleMaterial.normalMap.offset.y = time * 0.02;
-      }
-
-      // Animate rotation and wobble
-      if (textMesh && isRotating) {
-        const group = textMesh.userData.group;
-        group.rotation.y = time * 0.5;
-        group.rotation.x = Math.sin(time * 0.3) * 0.1;
-        group.position.y = Math.sin(time * 1.5) * 0.3 + 2;
-      }
-
-      particles.rotation.y = time * 0.1;
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    // Controls
-    function toggleRotation() {
-      isRotating = !isRotating;
-    }
-    function changeColor() {
-      if (textMesh) {
-        colorIndex = (colorIndex + 1) % colors.length;
-        bubbleMaterial.color.setHex(colors[colorIndex]);
-      }
-    }
-
-    window.addEventListener('resize', () => {
-      camera.aspect = innerWidth / innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(innerWidth, innerHeight);
-    });
-  </script>
+// Resize
+window.addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+</script>
 </body>
 </html>
