@@ -1,303 +1,132 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>3D Rotating Bubble Text</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: radial-gradient(ellipse at center, #111 0%, #000 100%);
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-        }
-        #container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        #controls {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: white;
-            z-index: 100;
-            background: rgba(0,0,0,0.5);
-            padding: 10px;
-            border-radius: 8px;
-        }
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            margin: 5px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bubble Glass Text</title>
+<style>
+  body { margin:0; background: radial-gradient(circle, #111, #000); overflow:hidden; }
+  #container { width:100vw; height:100vh; display:flex; justify-content:center; align-items:center; }
+  #controls { position:absolute; top:20px; left:20px; background:rgba(0,0,0,0.5); color:white; padding:10px; border-radius:8px; z-index:1; }
+  button { background:#007bff;color:#fff;border:none;padding:8px 16px;margin:5px;border-radius:4px;cursor:pointer; }
+  button:hover { background:#0056b3; }
+</style>
 </head>
 <body>
 <div id="controls">
-    <div>3D Bubble Text Animation</div>
-    <button onclick="toggleRotation()">Toggle Rotation</button>
-    <button onclick="changeColor()">Change Color</button>
+  <div>Bubble Text 🤍</div>
+  <button onclick="toggleRotation()">Toggle Rotation</button>
+  <button onclick="changeColor()">Change Color</button>
 </div>
 <div id="container"></div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://threejs.org/examples/jsm/loaders/FontLoader.js"></script>
+<script src="https://threejs.org/examples/jsm/geometries/TextGeometry.js"></script>
 <script>
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x000000);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    document.getElementById('container').appendChild(renderer.domElement);
+let scene = new THREE.Scene();
+let camera = new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,0.1,1000);
+let renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+document.getElementById('container').appendChild(renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.6); // increased intensity
-    scene.add(ambientLight);
+// Load cube environment map for reflections
+const cubeUrls = ['px.jpg','nx.jpg','py.jpg','ny.jpg','pz.jpg','nz.jpg']; // placeholder HDR set
+const cubeTex = new THREE.CubeTextureLoader().setPath('images/cube/').load(cubeUrls);
+scene.environment = cubeTex;
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    directionalLight.position.set(10, 10, 5);
-    directionalLight.castShadow = true;
-    scene.add(directionalLight);
+// Lights
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const dir = new THREE.DirectionalLight(0xffffff, 1.2);
+dir.position.set(10,10,10);
+dir.castShadow = true;
+scene.add(dir);
+const p1 = new THREE.PointLight(0x88ccff,1,100);
+const p2 = new THREE.PointLight(0xff88cc,1,100);
+scene.add(p1, p2);
 
-    const pointLight1 = new THREE.PointLight(0x0080ff, 1.2, 100);
-    pointLight1.position.set(-20, 10, 10);
-    scene.add(pointLight1);
+// Glass material
+const bubbleMaterial = new THREE.MeshPhysicalMaterial({
+  color: 0x88ccff,
+  roughness: 0,
+  metalness: 0,
+  transmission: 1,
+  thickness: 1.2,
+  ior: 1.45,
+  reflectivity: 1,
+  clearcoat: 1,
+  clearcoatRoughness: 0.05,
+  envMap: cubeTex
+});
 
-    const pointLight2 = new THREE.PointLight(0xff0080, 1.2, 100);
-    pointLight2.position.set(20, 10, 10);
-    scene.add(pointLight2);
+// Load bubble-font and create text
+let textMesh, isRotating = true, colors=[0x88ccff,0xff88cc,0x88ff88], colorIndex=0;
+new THREE.FontLoader().load('fonts/indieBubble.json', font => {
+  const geo = new THREE.TextGeometry('kelix', {
+    font, size:4, height:1.2, curveSegments:32,
+    bevelEnabled:true,
+    bevelThickness:0.4,
+    bevelSize:0.8,
+    bevelOffset:0,
+    bevelSegments:32
+  });
+  geo.center();
+  textMesh = new THREE.Mesh(geo, bubbleMaterial);
+  textMesh.castShadow = true;
+  textMesh.receiveShadow = true;
+  scene.add(textMesh);
+});
 
-    const bubbleMaterial = new THREE.MeshPhysicalMaterial({
-        color: 0x2196F3,
-        transparent: true,
-        opacity: 0.95,
-        roughness: 0.05,
-        metalness: 0.2,
-        transmission: 0.95,
-        thickness: 0.6,
-        ior: 1.5,
-        reflectivity: 1.0,
-        iridescence: 1.0,
-        iridescenceIOR: 1.3,
-        iridescenceThicknessRange: [200, 1000]
-    });
+const particleGeo = new THREE.BufferGeometry();
+const count = 150;
+const pos = new Float32Array(count * 3);
+for(let i=0;i<count*3;i++) pos[i] = (Math.random()-0.5)*50;
+particleGeo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+const pmat = new THREE.PointsMaterial({ size:0.1, color:0x88ccff, transparent:true, opacity:0.6 });
+const pmesh = new THREE.Points(particleGeo, pmat);
+scene.add(pmesh);
 
-    let textMesh;
-    let isRotating = true;
-    const colors = [0x2196F3, 0xFF5722, 0x4CAF50, 0xFF9800, 0x9C27B0, 0xF44336];
-    let colorIndex = 0;
+camera.position.set(0,2,20);
+let time=0;
+function animate(){
+  requestAnimationFrame(animate);
+  time += 0.01;
+  if(textMesh && isRotating){
+    textMesh.rotation.set(Math.sin(time*0.5)*0.2, time*0.6, Math.cos(time*0.3)*0.1);
+    textMesh.position.y = Math.sin(time*0.8)*0.5;
+  }
+  pmesh.rotation.y = time*0.1;
+  pmesh.rotation.x = time*0.05;
+  p1.position.set(Math.sin(time)*20,10,Math.cos(time)*20);
+  p2.position.set(Math.cos(time*1.3)*20,10,Math.sin(time*1.3)*20);
+  renderer.render(scene, camera);
+}
 
-    function createTextMesh() {
-        const group = new THREE.Group();
-        const letters = [
-            { char: 'k', x: -8 },
-            { char: 'e', x: -4 },
-            { char: 'l', x: 0 },
-            { char: 'i', x: 4 },
-            { char: 'x', x: 8 }
-        ];
+function toggleRotation(){ isRotating = !isRotating; }
+function changeColor(){
+  if(textMesh){
+    colorIndex = (colorIndex+1) % colors.length;
+    textMesh.material.color.setHex(colors[colorIndex]);
+  }
+}
 
-        letters.forEach(letter => {
-            let shape;
-            switch(letter.char) {
-                case 'k': shape = createKShape(); break;
-                case 'e': shape = createEShape(); break;
-                case 'l': shape = createLShape(); break;
-                case 'i': shape = createIShape(); break;
-                case 'x': shape = createXShape(); break;
-            }
+window.addEventListener('mousemove', e=>{
+  const mx = (e.clientX/window.innerWidth)*2-1;
+  const my = -(e.clientY/window.innerHeight)*2+1;
+  if(textMesh){
+    textMesh.rotation.x += my*0.001;
+    textMesh.rotation.y += mx*0.001;
+  }
+});
 
-            const extrudeSettings = {
-                depth: 1.5,
-                bevelEnabled: true,
-                bevelSegments: 16,
-                steps: 3,
-                bevelSize: 0.5,
-                bevelThickness: 0.4
-            };
+window.addEventListener('resize', _=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
 
-            const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-            const mesh = new THREE.Mesh(geometry, bubbleMaterial);
-            mesh.position.x = letter.x;
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            group.add(mesh);
-        });
-
-        return group;
-    }
-
-    function createKShape() {
-        const shape = new THREE.Shape();
-        shape.moveTo(0, 0);
-        shape.lineTo(0, 6);
-        shape.lineTo(1, 6);
-        shape.lineTo(1, 3.5);
-        shape.lineTo(2.5, 6);
-        shape.lineTo(4, 6);
-        shape.lineTo(2, 3);
-        shape.lineTo(4, 0);
-        shape.lineTo(2.5, 0);
-        shape.lineTo(1, 2.5);
-        shape.lineTo(1, 0);
-        shape.lineTo(0, 0);
-        return shape;
-    }
-
-    function createEShape() {
-        const shape = new THREE.Shape();
-        shape.moveTo(0, 0);
-        shape.lineTo(0, 6);
-        shape.lineTo(3.5, 6);
-        shape.lineTo(3.5, 5);
-        shape.lineTo(1, 5);
-        shape.lineTo(1, 3.5);
-        shape.lineTo(3, 3.5);
-        shape.lineTo(3, 2.5);
-        shape.lineTo(1, 2.5);
-        shape.lineTo(1, 1);
-        shape.lineTo(3.5, 1);
-        shape.lineTo(3.5, 0);
-        shape.lineTo(0, 0);
-        return shape;
-    }
-
-    function createLShape() {
-        const shape = new THREE.Shape();
-        shape.moveTo(0, 0);
-        shape.lineTo(0, 6);
-        shape.lineTo(1, 6);
-        shape.lineTo(1, 1);
-        shape.lineTo(3.5, 1);
-        shape.lineTo(3.5, 0);
-        shape.lineTo(0, 0);
-        return shape;
-    }
-
-    function createIShape() {
-        const shape = new THREE.Shape();
-        shape.moveTo(0, 0);
-        shape.lineTo(0, 1);
-        shape.lineTo(1, 1);
-        shape.lineTo(1, 5);
-        shape.lineTo(0, 5);
-        shape.lineTo(0, 6);
-        shape.lineTo(3, 6);
-        shape.lineTo(3, 5);
-        shape.lineTo(2, 5);
-        shape.lineTo(2, 1);
-        shape.lineTo(3, 1);
-        shape.lineTo(3, 0);
-        shape.lineTo(0, 0);
-        return shape;
-    }
-
-    function createXShape() {
-        const shape = new THREE.Shape();
-        shape.moveTo(0, 0);
-        shape.lineTo(1.2, 0);
-        shape.lineTo(2, 2);
-        shape.lineTo(2.8, 0);
-        shape.lineTo(4, 0);
-        shape.lineTo(2.7, 3);
-        shape.lineTo(4, 6);
-        shape.lineTo(2.8, 6);
-        shape.lineTo(2, 4);
-        shape.lineTo(1.2, 6);
-        shape.lineTo(0, 6);
-        shape.lineTo(1.3, 3);
-        shape.lineTo(0, 0);
-        return shape;
-    }
-
-    textMesh = createTextMesh();
-    scene.add(textMesh);
-
-    const particlesGeometry = new THREE.BufferGeometry();
-    const particlesCount = 100;
-    const posArray = new Float32Array(particlesCount * 3);
-    for(let i = 0; i < particlesCount * 3; i++) {
-        posArray[i] = (Math.random() - 0.5) * 50;
-    }
-    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-    const particlesMaterial = new THREE.PointsMaterial({
-        size: 0.1,
-        color: 0x4FC3F7,
-        transparent: true,
-        opacity: 0.6
-    });
-    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-    scene.add(particlesMesh);
-
-    camera.position.z = 15;
-    camera.position.y = 2;
-
-    let time = 0;
-    function animate() {
-        requestAnimationFrame(animate);
-        time += 0.01;
-
-        if (textMesh && isRotating) {
-            textMesh.rotation.x = Math.sin(time * 0.5) * 0.2;
-            textMesh.rotation.y = time * 0.8;
-            textMesh.rotation.z = Math.cos(time * 0.3) * 0.1;
-            textMesh.position.y = Math.sin(time * 1.2) * 0.5 - 0.5;
-        }
-
-        particlesMesh.rotation.y = time * 0.1;
-        particlesMesh.rotation.x = time * 0.05;
-
-        pointLight1.position.x = Math.sin(time) * 20;
-        pointLight1.position.z = Math.cos(time) * 20;
-        pointLight2.position.x = Math.cos(time * 1.5) * 20;
-        pointLight2.position.z = Math.sin(time * 1.5) * 20;
-
-        renderer.render(scene, camera);
-    }
-
-    function toggleRotation() {
-        isRotating = !isRotating;
-    }
-
-    function changeColor() {
-        if (textMesh) {
-            colorIndex = (colorIndex + 1) % colors.length;
-            textMesh.children.forEach(child => {
-                child.material.color.setHex(colors[colorIndex]);
-            });
-        }
-    }
-
-    window.addEventListener('resize', function() {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    animate();
-
-    let mouseX = 0;
-    let mouseY = 0;
-
-    document.addEventListener('mousemove', function(event) {
-        mouseX = (event.clientX / window.innerWidth) * 2 - 1;
-        mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
-        if (textMesh) {
-            textMesh.rotation.x += mouseY * 0.001;
-            textMesh.rotation.y += mouseX * 0.001;
-        }
-    });
+animate();
 </script>
 </body>
 </html>
