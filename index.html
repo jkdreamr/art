@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rotating Kelix</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .rotate-container {
+      width: 400px;
+      height: 400px;
+      perspective: 1000px;
+    }
+
+    .rotate-image {
+      width: 100%;
+      height: auto;
+      transform-style: preserve-3d;
+      animation: spin 8s linear infinite;
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotateY(0deg);
+      }
+      to {
+        transform: rotateY(360deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="rotate-container">
+    <img src="kelix.png" alt="kelix" class="rotate-image" />
+  </div>
+</body>
+</html>
